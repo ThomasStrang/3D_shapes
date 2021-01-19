@@ -5,6 +5,8 @@
 typedef unsigned long int U32;
 typedef U32 PointIndex;
 
+
+
 struct Point {
     double x, y, z;
     Point(double x, double y, double z) : x(x), y(y), z(z) {};

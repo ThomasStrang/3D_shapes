@@ -2,7 +2,6 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-
 std::unique_ptr<Tessellation> BallTessellationGenerator::makeBall(double r) {
     U32 k = 0;
     const U32 numPoints = 2 * N * (N + 1);
@@ -41,6 +40,5 @@ std::unique_ptr<Tessellation> BallTessellationGenerator::makeBall(double r) {
             }
         }
     }
-
     return std::make_unique<Tessellation>(points, numPoints, triangles, numTriangles);
 }
