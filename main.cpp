@@ -1,10 +1,10 @@
 #include "cxxopts.hpp"
 #include "tessellation.h"
 #include "ball_tessellation_generator.h"
+#include "cube_tessellation_generator.h"
 #include "stl_writer.h"
 #include <fstream>
 #include <iostream>
-using namespace std;
 
 int main(int argc, char** argv) {
     //cxxopts::Options options(
@@ -19,12 +19,12 @@ int main(int argc, char** argv) {
     double radius = 100.00;
     std::string outputFileName = "output_file.STL";
 
-    
+    /*
     BallTessellationGenerator generator;
-    auto tess = generator.makeBall(radius);
+    auto tess = generator.makeBall(radius);*/
     //TODO THOMAS
-    ////CubeTessellationGenerator generator;
-    ////auto tess = generator.makeCube(radius);
+    CubeTessellationGenerator generator;
+    auto tess = generator.makeCube(radius);
 
     std::ofstream outputfilestream(outputFileName);
     StlWriter::writeTessellation(tess.get(), outputfilestream);

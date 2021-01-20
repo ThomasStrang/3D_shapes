@@ -111,11 +111,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ball_tessellation_generator.cpp" />
+    <ClCompile Include="cube_tessellation_generator.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="stl_writer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ball_tessellation_generator.h" />
+    <ClInclude Include="cube_tessellation_generator.h" />
     <ClInclude Include="cxxopts.hpp" />
     <ClInclude Include="tessellation.h" />
     <ClInclude Include="stl_writer.h" />

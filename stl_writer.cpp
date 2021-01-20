@@ -27,7 +27,7 @@ void StlWriter::writeTessellation(Tessellation* tess, std::ostream& outputStream
         const Point& a = points[triangle[0]];
         const Point& b = points[triangle[1]];
         const Point& c = points[triangle[2]];
-        Point normal = crossProduct(subtract(b, a), subtract(c, a));
+        Point normal = crossProduct(subtract(b,a), subtract(c,a));
         outputStream << "facet " << "normal " << normal.x << " " << normal.y << " " << normal.z << std::endl;
         outputStream << indent << "outer loop" << std::endl;
         outputStream << indent << indent << "vertex " << a.x << " " << a.y << " " << a.z << std::endl;
