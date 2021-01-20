@@ -7,8 +7,6 @@
 using namespace std;
 
 int main(int argc, char** argv) {
-    std::cout << "Hello World!\n";
-
     //cxxopts::Options options(
     //    "BallTessellationGenerator",
     //    "Will generate a simple ball STL"
@@ -19,7 +17,7 @@ int main(int argc, char** argv) {
 
     //auto args = options.parse(argc, argv);
     double radius = 100.00;
-    std::string outputFileName = "afile.STL";
+    std::string outputFileName = "output_file.STL";
 
     
     BallTessellationGenerator generator;
