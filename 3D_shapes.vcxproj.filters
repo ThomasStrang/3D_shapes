@@ -27,6 +27,9 @@
     <ClCompile Include="cube_tessellation_generator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="sdl_window.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ball_tessellation_generator.h">
@@ -44,5 +47,11 @@
     <ClInclude Include="cube_tessellation_generator.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="sdl_window.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

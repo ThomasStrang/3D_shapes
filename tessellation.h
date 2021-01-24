@@ -4,6 +4,7 @@
 
 typedef unsigned long int U32;
 typedef U32 PointIndex;
+typedef U32 TriangleIndex;
 
 
 
@@ -11,6 +12,9 @@ struct Point {
     double x, y, z;
     Point(double x, double y, double z) : x(x), y(y), z(z) {};
     Point() : x(), y(), z() {};
+    bool operator==(const Point& rhs) const {
+        return (x == rhs.x) && (y == rhs.y) && (z == rhs.z);
+    }
 };
 
 struct Triangle {
