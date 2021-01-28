@@ -4,38 +4,50 @@
 #include "cube_tessellation_generator.h"
 #include "stl_writer.h"
 #include "sdl_window.h"
+#include "frame_controller.h"
 #include <fstream>
 #include <iostream>
 
 int tessellation_program(int argc, char** argv) {
-    //cxxopts::Options options(
-    //    "BallTessellationGenerator",
-    //    "Will generate a simple ball STL"
-    //);
-    //options.add_options()
-    //    ("r,radius", "radius of the ball", cxxopts::value<double>())
-    //    ("o,output", "output file name", cxxopts::value<std::string>());
-
-    //auto args = options.parse(argc, argv);
-    double radius = 128;
-    int depth = 2;
-    std::string outputFileName = "output_file.STL";
-
-    /*
-    BallTessellationGenerator generator;
-    auto tess = generator.makeBall(radius);*/
     CubeTessellationGenerator generator;
-    auto tess = generator.makeFractalCube(radius, depth);
-
-    std::cout << "Generated Tessellation." << std::endl;
-    std::ofstream outputfilestream(outputFileName);
+    auto tess = generator.makeFractalCube(128, 2);
+    std::ofstream outputfilestream("output_file.STL");
     StlWriter::writeTessellation(tess.get(), outputfilestream);
     outputfilestream.close();
-    std::cout << "Wrote Tessellation to file.";
     return 0;
 }
 
 int main(int argc, char** argv) {
-    //return tessellation_program(argc,argv);
-    sdl_window::sdl_window_program();
+    Window window;
+    if (window.init() == 0) {
+
+        BallTessellationGenerator generator;
+        auto sphere = generator.makeBall(100);
+        int w = window.get_w();
+        int h = window.get_h();
+        for (int x = 0; x < w; x++) {
+            for (int y = 0; y < h; y++) {
+                window.write_pixel(x, y, x * ((float)255 / w), 0, y * ((float)255 / h));
+            }
+        }
+
+        auto frameController = FrameController(60);
+        bool quit = false;
+        SDL_Event e;
+
+        while (!quit) {
+            if (SDL_PollEvent(&e) > 0) {
+                switch (e.type) {
+                case SDL_QUIT:
+                    quit = true;
+                    break;
+                }
+            }
+            else {
+                window.push_buffer();
+                frameController.wait_next_frame();
+            }
+        }
+    }
+    return 0;
 }

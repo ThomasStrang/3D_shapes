@@ -1,52 +1,54 @@
 #include <SDL.h>
 #include <iostream>
 #include "sdl_window.h"
-namespace sdl_window {
-    int sdl_window_program() {
-        if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-            std::cout << "Failed to initialize the SDL2 library\n";
-            return -1;
-        }
 
-        SDL_Window* window = SDL_CreateWindow("SDL2 Window", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 680, 480, 0);
 
-        if (!window) {
-            std::cout << "Failed to create window\n";
-            return -1;
-        }
+Window::Window() : initialised(false) {}
 
-        SDL_Surface* window_surface = SDL_GetWindowSurface(window);
+int Window::init() {
+	if (initialised) return -1;
+	if (SDL_Init(SDL_INIT_VIDEO) < 0) return -1;
 
-        if (!window_surface) {
-            std::cout << "Failed to get the surface from the window\n";
-            return -1;
-        }
-        Uint32* pixels = (Uint32*)window_surface->pixels;
-        int w = window_surface->w;
-        int h = window_surface->h;
-        auto* pixel_format = window_surface->format;
-        
-        bool stay_running = true;
-        for (int x = 0; x < w; x++) {
-            for (int y = 0; y < h; y++) {
-                pixels[x + y * w] = SDL_MapRGB(pixel_format, x * ((float)255 / w), 0, y * ((float)255 / h));
-            }
-        }
-        bool ran = false;
-        while (stay_running) {
-            SDL_Delay(100);
-            SDL_Event e;
-            while (SDL_PollEvent(&e) > 0) {
-                switch (e.type){
-                case SDL_QUIT:
-                    stay_running = false;
-                    break;
-                }
-            }
-            if (!ran)
-            SDL_UpdateWindowSurface(window);
-            ran = true;
-        }
-        return 0;
-    }
+	window = std::unique_ptr<SDL_Window, std::function<void(SDL_Window*)>>(SDL_CreateWindow("a hello world window", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, 0), SDL_DestroyWindow);
+	if (!window.get()) return -1;
+
+	surface = std::unique_ptr<SDL_Surface, std::function<void(SDL_Surface*)>>(SDL_GetWindowSurface(window.get()), SDL_FreeSurface);
+	if (!surface.get()) return -1;
+
+	pixels = (Uint32*)surface->pixels; //Might want to consider whether the surface ever changes it's pointer to pixels, for example if the window is resized?
+
+	initialised = true;
+	return 0;
+
+}
+
+bool Window::is_initialised() {
+	return initialised;
+}
+
+int Window::get_w() {
+	if (!is_initialised()) return -1;
+	return surface->w;
+}
+
+int Window::get_h() {
+	if (!initialised) return -1;
+	return surface->h;
+}
+
+int Window::write_pixel(int x, int y, Uint8 r, Uint8 g, Uint8 b) {
+	if (!initialised) return -1;
+	pixels[x + y * get_w()] = SDL_MapRGB(surface->format, r, g, b);
+	return 0;
+}
+
+int Window::push_buffer() {
+	if (!initialised) return -1;
+	return SDL_UpdateWindowSurface(window.get());
+}
+
+Window::~Window() {
+	surface.reset();
+	window.reset();
+	SDL_Quit();
 }

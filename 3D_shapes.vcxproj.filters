@@ -30,25 +30,31 @@
     <ClCompile Include="sdl_window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="frame_controller.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ball_tessellation_generator.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="cxxopts.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="tessellation.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="stl_writer.h">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="ball_tessellation_generator.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="cube_tessellation_generator.h">
-      <Filter>Source Files</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="sdl_window.h">
-      <Filter>Source Files</Filter>
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="stl_writer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tessellation.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="frame_controller.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
