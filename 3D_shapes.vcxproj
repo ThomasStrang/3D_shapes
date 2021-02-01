@@ -119,7 +119,9 @@
     <ClCompile Include="ball_tessellation_generator.cpp" />
     <ClCompile Include="cube_tessellation_generator.cpp" />
     <ClCompile Include="frame_controller.cpp" />
+    <ClCompile Include="geometry.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="renderer.cpp" />
     <ClCompile Include="sdl_window.cpp" />
     <ClCompile Include="stl_writer.cpp" />
   </ItemGroup>
@@ -128,7 +130,9 @@
     <ClInclude Include="cube_tessellation_generator.h" />
     <ClInclude Include="cxxopts.hpp" />
     <ClInclude Include="frame_controller.h" />
+    <ClInclude Include="geometry.h" />
     <ClInclude Include="sdl_window.h" />
+    <ClInclude Include="stl_reader.h" />
     <ClInclude Include="tessellation.h" />
     <ClInclude Include="stl_writer.h" />
   </ItemGroup>
