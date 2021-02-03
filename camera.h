@@ -12,6 +12,7 @@ public:
 	void rotate_camera_roll(double angle);
 	void rotate_camera_pitch(double angle);
 	void rotate_camera_yaw(double angle);
+	Matrix4x4 get_transform();
 	Matrix4x4 get_translation();
 	Matrix4x4 get_rotation();
 };

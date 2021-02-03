@@ -54,7 +54,7 @@ public:
 		auto points = tess->allPoints();
 		double* z_buffer = new double[((int)w) * ((int)h)] { 100000.0 };
 		for (Triangle t : tess->allTriangles()) {
-			renderTriangle(points[t[0]], points[t[1]], points[t[2]], cam, z_buffer);
+			renderTriangle(points[t[0]], points[t[1]], points[t[2]], cam->get_transform(), z_buffer);
 		}
 		delete[] z_buffer;
 		std::cout << "rendered frame.";
@@ -63,12 +63,10 @@ public:
 
 private:
 	
-	void renderTriangle(Point a, Point b, Point c, Camera* cam, double* z_buffer) {
-		auto cam_translation = cam->get_translation();
-		auto cam_rotation = cam->get_rotation();
-		Matrix4x1 v1 = cam_rotation * (cam_translation * (cube_rotation * Matrix4x1(a.x, a.y, a.z, 1)));
-		Matrix4x1 v2 = cam_rotation * (cam_translation * (cube_rotation * Matrix4x1(b.x, b.y, b.z, 1)));
-		Matrix4x1 v3 = cam_rotation * (cam_translation * (cube_rotation * Matrix4x1(c.x, c.y, c.z, 1)));
+	void renderTriangle(Point a, Point b, Point c, Matrix4x4 cam_transform, double* z_buffer) {
+		Matrix4x1 v1 =   (cam_transform * (cube_rotation * Matrix4x1(a.x, a.y, a.z, 1)));
+		Matrix4x1 v2 =  (cam_transform * (cube_rotation * Matrix4x1(b.x, b.y, b.z, 1)));
+		Matrix4x1 v3 =  (cam_transform * (cube_rotation * Matrix4x1(c.x, c.y, c.z, 1)));
 		v1.y *= -screenRatio;
 		v2.y *= -screenRatio;
 		v3.y *= -screenRatio;
@@ -77,15 +75,13 @@ private:
 		}
 	}
 
-
 	Matrix3x1 map_to_plane(Matrix4x1 v) {
 		double inv_z = 1/v.z;
-		auto s = Matrix3x1(v.x*inv_z,v.y* inv_z,1);
+		auto s = Matrix3x1(v.x*inv_z,v.y*inv_z,1);
 		s.x = (s.x + 1) * w_div_2;
 		s.y = (s.y + 1) * h_div_2;
 		return s;
 	}
-
 
 	void rasterise(Matrix4x1 v1, Matrix4x1 v2, Matrix4x1 v3, double* z_buffer) {
 		auto surface_normal = (v2 - v1).cross_as_3d(v3 - v1).normalise();

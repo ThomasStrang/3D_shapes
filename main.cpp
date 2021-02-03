@@ -23,14 +23,6 @@ int tessellation_program(int argc, char** argv) {
 
 void handle_keyboard_input(Camera& c) {
     auto state = SDL_GetKeyboardState(NULL);
-    if (state[SDL_SCANCODE_UP])
-        c.move_camera_relative_to_rotation(Matrix4x1(0, 0, 5, 0));
-    if (state[SDL_SCANCODE_DOWN])
-        c.move_camera_relative_to_rotation(Matrix4x1(0, 0, -5, 0));
-    if (state[SDL_SCANCODE_LEFT])
-        c.move_camera_relative_to_rotation(Matrix4x1(-5, 0, 0, 0));
-    if (state[SDL_SCANCODE_RIGHT])
-        c.move_camera_relative_to_rotation(Matrix4x1(5, 0, 0, 0));
     if (state[SDL_SCANCODE_W])
         c.rotate_camera_pitch(0.1);
     if (state[SDL_SCANCODE_S])
@@ -43,6 +35,14 @@ void handle_keyboard_input(Camera& c) {
         c.rotate_camera_yaw(-0.1);
     if (state[SDL_SCANCODE_E])
         c.rotate_camera_yaw(0.1);
+    if (state[SDL_SCANCODE_UP])
+        c.move_camera_relative_to_rotation(Matrix4x1(0, 0, 5, 0));
+    if (state[SDL_SCANCODE_DOWN])
+        c.move_camera_relative_to_rotation(Matrix4x1(0, 0, -5, 0));
+    if (state[SDL_SCANCODE_LEFT])
+        c.move_camera_relative_to_rotation(Matrix4x1(-5, 0, 0, 0));
+    if (state[SDL_SCANCODE_RIGHT])
+        c.move_camera_relative_to_rotation(Matrix4x1(5, 0, 0, 0));
 }
 
 int main(int argc, char** argv) {
