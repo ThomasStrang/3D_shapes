@@ -1,3 +1,7 @@
+
+#include <fstream>
+#include <iostream>
+#include "renderer.cpp"
 #include "cxxopts.hpp"
 #include "tessellation.h"
 #include "ball_tessellation_generator.h"
@@ -6,9 +10,7 @@
 #include "stl_reader.h"
 #include "sdl_window.h"
 #include "frame_controller.h"
-#include <fstream>
-#include <iostream>
-#include "renderer.cpp"
+#include "camera.h"
 
 int tessellation_program(int argc, char** argv) {
     CubeTessellationGenerator generator;
@@ -19,7 +21,29 @@ int tessellation_program(int argc, char** argv) {
     return 0;
 }
 
-  
+void handle_keyboard_input(Camera& c) {
+    auto state = SDL_GetKeyboardState(NULL);
+    if (state[SDL_SCANCODE_UP])
+        c.move_camera_relative_to_rotation(Matrix4x1(0, 0, 5, 0));
+    if (state[SDL_SCANCODE_DOWN])
+        c.move_camera_relative_to_rotation(Matrix4x1(0, 0, -5, 0));
+    if (state[SDL_SCANCODE_LEFT])
+        c.move_camera_relative_to_rotation(Matrix4x1(-5, 0, 0, 0));
+    if (state[SDL_SCANCODE_RIGHT])
+        c.move_camera_relative_to_rotation(Matrix4x1(5, 0, 0, 0));
+    if (state[SDL_SCANCODE_W])
+        c.rotate_camera_pitch(0.1);
+    if (state[SDL_SCANCODE_S])
+        c.rotate_camera_pitch(-0.1);
+    if (state[SDL_SCANCODE_A])
+        c.rotate_camera_roll(0.1);
+    if (state[SDL_SCANCODE_D])
+        c.rotate_camera_roll(-0.1);
+    if (state[SDL_SCANCODE_Q])
+        c.rotate_camera_yaw(-0.1);
+    if (state[SDL_SCANCODE_E])
+        c.rotate_camera_yaw(0.1);
+}
 
 int main(int argc, char** argv) {
     tessellation_program(argc, argv);
@@ -31,7 +55,8 @@ int main(int argc, char** argv) {
         //auto tess = StlReader.readTessellation(inputfilestream);
         CubeTessellationGenerator generator;
         auto tess = generator.makeFractalCube(100, 2);
-        Renderer r = Renderer(window, tess.get());
+        Camera c = Camera();
+        Renderer r = Renderer(window, &c, tess.get());
         r.init();
         auto frameController = FrameController(60);
         bool quit = false;
@@ -43,44 +68,9 @@ int main(int argc, char** argv) {
                 case SDL_QUIT :
                     quit = true;
                     break;
-                case SDL_MOUSEWHEEL :
-                    r.move_camera(Matrix4x1(0, 25*(double)e.wheel.y, 0, 0));
-                    break;
-                case SDL_KEYDOWN :
-                    switch (e.key.keysym.sym) {
-                    case SDLK_w:
-                        r.move_camera(Matrix4x1(0, 0, 25.0, 0));
-                        break;
-                    case SDLK_a:
-                        r.move_camera(Matrix4x1(-25, 0, 0, 0));
-                        break;
-                    case SDLK_s:
-                        r.move_camera(Matrix4x1(0, 0, -25.0, 0));
-                        break;
-                    case SDLK_d:
-                        r.move_camera(Matrix4x1(25, 0, 0, 0));
-                        break;
-                    case SDLK_LEFT:
-                        break;
-                    case SDLK_RIGHT:
-                        break;
-                    case SDLK_UP:
-                        break;
-                    case SDLK_DOWN:
-                        break;
-                    }
-                    break;
                 }
             } else {
-                auto state = SDL_GetKeyboardState(NULL);
-                if (state[SDL_SCANCODE_UP])
-                    r.move_camera(Matrix4x1(0, 5, 0, 0));
-                if (state[SDL_SCANCODE_DOWN])
-                    r.move_camera(Matrix4x1(0, -5, 0, 0));
-                if (state[SDL_SCANCODE_LEFT])
-                    r.move_camera(Matrix4x1(-5, 0, 0, 0));
-                if (state[SDL_SCANCODE_RIGHT])
-                    r.move_camera(Matrix4x1(5, 0, 0, 0));
+                handle_keyboard_input(c);
                 r.render();
                 window.push_buffer();
                 frameController.wait_next_frame();

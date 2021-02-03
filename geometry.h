@@ -50,10 +50,14 @@ struct Matrix4x4 {
 	Matrix4x4(Matrix4x1 i, Matrix4x1 j, Matrix4x1 k, Matrix4x1 m) : i(i), j(j), k(k), m(m) {}
 	Matrix4x4 operator *(Matrix4x4 other);
 	Matrix4x1 operator *(Matrix4x1 v);
+	Matrix4x4 normalise();
 	void print(std::ostream* os);
 };
 
 Matrix4x4 identityMatrix4x4();
 Matrix4x4 translation4x1(Matrix4x1 t);
 Matrix3x3 translation3x1(Matrix3x1 t);
+Matrix4x4 rotationRoll(double angle);
+Matrix4x4 rotationPitch(double angle);
+Matrix4x4 rotationYaw(double angle);
 

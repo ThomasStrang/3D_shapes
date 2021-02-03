@@ -12,6 +12,9 @@ Matrix4x4 Matrix4x4::operator *(Matrix4x4 other) {
 		*this * other.m
 	);
 }
+Matrix4x4 Matrix4x4::normalise() {
+	return Matrix4x4(i.normalise(), j.normalise(), k.normalise(), m.normalise());
+}
 
 Matrix4x1 Matrix4x4::operator *(Matrix4x1 v) {
 	return (i * v.x) + (j * v.y) + (k * v.z) + (m * v.w);
@@ -59,7 +62,7 @@ Matrix4x1 Matrix4x1::cross_as_3d(Matrix4x1 o) {
 }
 
 Matrix4x1 Matrix4x1::normalise() {
-	return *this / (sqrt(x * x + y * y + z * z + w * w));
+	return *this * (1/(sqrt(x * x + y * y + z * z + w * w)));
 }
 
 double Matrix4x1::dot_product_as_3d(Matrix4x1 o) {
@@ -159,6 +162,31 @@ Matrix3x3 translation3x1(Matrix3x1 t) {
 		Matrix3x1(1, 0, 0),
 		Matrix3x1(0, 1, 0),
 		Matrix3x1(t.x, t.y, 1)
+	);
+}
+
+Matrix4x4 rotationRoll(double angle) {
+	return Matrix4x4(
+		Matrix4x1(cos(angle), -sin(angle), 0, 0),
+		Matrix4x1(sin(angle), cos(angle), 0, 0),
+		Matrix4x1(0, 0, 1, 0),
+		Matrix4x1(0, 0, 0, 1)
+	);
+}
+Matrix4x4 rotationPitch(double angle) {
+	return Matrix4x4(
+		Matrix4x1(1, 0, 0, 0),
+		Matrix4x1(0, cos(angle), -sin(angle), 0),
+		Matrix4x1(0, sin(angle), cos(angle), 0),
+		Matrix4x1(0, 0, 0, 1)
+	);
+}
+Matrix4x4 rotationYaw(double angle) {
+	return Matrix4x4(
+		Matrix4x1(cos(angle), 0, sin(angle), 0),
+		Matrix4x1(0, 1, 0, 0),
+		Matrix4x1(-sin(angle), 0, cos(angle), 0),
+		Matrix4x1(0, 0, 0, 1)
 	);
 }
 

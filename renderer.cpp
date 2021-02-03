@@ -1,8 +1,9 @@
 #include <iostream>
 #include "sdl_window.h"
 #include "tessellation.h"
-#include "geometry.h"
 #include <math.h>
+#include "geometry.h"
+#include "camera.h"
 
 struct Pixel {
 	int x, y;
@@ -14,7 +15,8 @@ class Renderer {
 
 	Window& window;
 	Tessellation* tess;
-	Matrix4x4 camera_translation = translation4x1(Matrix4x1(0, 0, 200, 0));//translates world coordinates root at camera
+	Matrix4x4 cube_rotation = identityMatrix4x4();
+	Camera* cam;
 	Matrix4x1 skylight = Matrix4x1(1, 1.2, 0, 1).normalise();
 	bool initialised;
 	double screenRatio;
@@ -25,7 +27,7 @@ class Renderer {
 
 public:
 
-	Renderer(Window&  w, Tessellation* t) : window(w), tess(t),  initialised(false) {}
+	Renderer(Window&  w, Camera* c, Tessellation* t) : window(w), cam(c), tess(t),  initialised(false) {}
 
 	bool is_initialised() {
 		return initialised;
@@ -50,25 +52,23 @@ public:
 			}
 		}
 		auto points = tess->allPoints();
-		double* z_buffer = new double[(int)w * (int)h] { 100000.0 };
+		double* z_buffer = new double[((int)w) * ((int)h)] { 100000.0 };
 		for (Triangle t : tess->allTriangles()) {
-			renderTriangle(points[t[0]], points[t[1]], points[t[2]], z_buffer);
+			renderTriangle(points[t[0]], points[t[1]], points[t[2]], cam, z_buffer);
 		}
-		delete z_buffer;
+		delete[] z_buffer;
 		std::cout << "rendered frame.";
 		return 0;
 	}
 
-	void move_camera(Matrix4x1 v) {
-		camera_translation.m = camera_translation.m - v;
-	}
-
 private:
 	
-	void renderTriangle(Point a, Point b, Point c, double* z_buffer) {
-		Matrix4x1 v1 = camera_translation * Matrix4x1(a.x, a.y, a.z, 1);
-		Matrix4x1 v2 = camera_translation * Matrix4x1(b.x, b.y, b.z, 1);
-		Matrix4x1 v3 = camera_translation * Matrix4x1(c.x, c.y, c.z, 1);
+	void renderTriangle(Point a, Point b, Point c, Camera* cam, double* z_buffer) {
+		auto cam_translation = cam->get_translation();
+		auto cam_rotation = cam->get_rotation();
+		Matrix4x1 v1 = cam_rotation * (cam_translation * (cube_rotation * Matrix4x1(a.x, a.y, a.z, 1)));
+		Matrix4x1 v2 = cam_rotation * (cam_translation * (cube_rotation * Matrix4x1(b.x, b.y, b.z, 1)));
+		Matrix4x1 v3 = cam_rotation * (cam_translation * (cube_rotation * Matrix4x1(c.x, c.y, c.z, 1)));
 		v1.y *= -screenRatio;
 		v2.y *= -screenRatio;
 		v3.y *= -screenRatio;
@@ -107,7 +107,7 @@ private:
 		for (int x = lo_x; x < hi_x; x++) {
 			for (int y = lo_y; y < hi_y; y++) {
 				if (z > z_buffer[x + (w * y)] && z_buffer[x + (w * y)] != 0)  continue;
-				Matrix3x1 xy = Matrix3x1(x+1, y+1, 1);
+				Matrix3x1 xy = Matrix3x1(x+0.5, y+0.5, 1);//add 0.5 to get the "middle" of the pixel, just for my own visualisation in my head.
 				if ((xy - s1).cross_as_2d(s12) <= 0 && (xy - s2).cross_as_2d(s23) <= 0 && (xy - s3).cross_as_2d(s31) <= 0) {
 					window.write_pixel(x, y, light_level, light_level, light_level);
 					z_buffer[x + (w * y)] = z;
