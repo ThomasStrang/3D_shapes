@@ -57,7 +57,6 @@ int main(int argc, char** argv) {
         auto tess = generator.makeFractalCube(100, 2);
         Camera c = Camera();
         Renderer r = Renderer(window, &c, tess.get());
-        r.init();
         auto frameController = FrameController(60);
         bool quit = false;
         SDL_Event e;

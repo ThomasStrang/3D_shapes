@@ -21,6 +21,8 @@ public:
 	int get_w();
 	int get_h();
 	int write_pixel(int x, int y, Uint8 r, Uint8 g, Uint8 b);
+	int write_pixel(int i, Uint8 r, Uint8 g, Uint8 b);
+	int write_pixel(int i, Uint32 c);
 	int push_buffer();
 	~Window();
 };

@@ -38,7 +38,21 @@ int Window::get_h() {
 
 int Window::write_pixel(int x, int y, Uint8 r, Uint8 g, Uint8 b) {
 	if (!initialised) return -1;
-	pixels[x + y * get_w()] = SDL_MapRGB(surface->format, r, g, b);
+	Uint32 colour = 255 << 24 + r << 16 + g << 8 + b;
+	pixels[x + y * surface->w] = colour;
+	return 0;
+}
+
+int Window::write_pixel(int i, Uint8 r, Uint8 g, Uint8 b) {
+	if (!initialised) return -1;
+	Uint32 colour = 255 << 24 + r << 16 + g << 8 + b;
+	pixels[i] = colour;
+	return 0;
+}
+
+int Window::write_pixel(int i, Uint32 c) {
+	if (!initialised) return -1;
+	pixels[i] = c;
 	return 0;
 }
 
