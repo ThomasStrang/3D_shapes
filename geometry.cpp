@@ -78,7 +78,6 @@ Matrix3x3 Matrix3x3::operator *(Matrix3x3 other) {
 	);
 }
 
-//in this instance we are multiplying a 3x1 by a 3x4, which isn't grammatically correct. we treat this like a 3x3 by ignoring the z axis transform (k)
 Matrix3x1 Matrix3x3::operator *(Matrix3x1 v) {
 	return (i * v.x) + (j * v.y) + (m * v.w);
 }

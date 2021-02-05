@@ -57,7 +57,6 @@ public:
 			renderTriangle(points[t[0]], points[t[1]], points[t[2]], cam->get_transform(), z_buffer);
 		}
 		delete[] z_buffer;
-		std::cout << "rendered frame.";
 		return 0;
 	}
 
@@ -87,15 +86,15 @@ private:
 		auto surface_normal = (v2 - v1).cross_as_3d(v3 - v1).normalise();
 		double dot_with_camera = surface_normal.dot_product_as_3d(v1);//if any are > 0 then all are.
 		if (dot_with_camera < 0)  return; // don't render triangles facing away? maybe remove this later.
-		double dot_with_skylight = surface_normal.dot_product_as_3d(skylight);
+		double dot_with_skylight = surface_normal.dot_product_as_3d(skylight);//currently light is always in same orientation as the camera I geuss..
 		int light_level = (dot_with_skylight + 1.0) * 127.0;
 		auto s1 = map_to_plane(v1);
 		auto s2 = map_to_plane(v2);
 		auto s3 = map_to_plane(v3);
 		int lo_x = std::max({ std::min({ (double)w - 1, s1.x,s2.x,s3.x }), 0.0 });
 		int lo_y = std::max({ std::min({ (double)h - 1, s1.y,s2.y,s3.y }), 0.0 });
-		int hi_x = std::min({ std::max({ 0.0, s1.x,s2.x,s3.x }), (double)w - 1 });
-		int hi_y = std::min({ std::max({ 0.0, s1.y,s2.y,s3.y }), (double)h - 1 });
+		int hi_x = std::min({ std::max({ 0.0, s1.x+1,s2.x+1,s3.x+1 }), (double)w - 1 });
+		int hi_y = std::min({ std::max({ 0.0, s1.y+1,s2.y+1,s3.y+1 }), (double)h - 1 });
 		auto s12 = s2 - s1;
 		auto s23 = s3 - s2;
 		auto s31 = s1 - s3;

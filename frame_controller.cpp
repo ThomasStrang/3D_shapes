@@ -14,6 +14,7 @@ FrameController::FrameController(long refresh_rate) {
 
 void FrameController::wait_next_frame() {
     long time_to_next_frame = next_frame - get_time();
+    std::cout << "ms to render frame: " << minimum_frame_duration - time_to_next_frame << "\n";
     if (time_to_next_frame>0) {
         std::this_thread::sleep_for(std::chrono::milliseconds(time_to_next_frame));
     }
