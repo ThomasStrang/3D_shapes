@@ -123,7 +123,6 @@
     <ClCompile Include="geometry.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="renderer.cpp" />
-    <ClCompile Include="RendererNew.cpp" />
     <ClCompile Include="sdl_window.cpp" />
     <ClCompile Include="stl_reader.cpp" />
     <ClCompile Include="stl_writer.cpp" />

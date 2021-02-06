@@ -21,28 +21,32 @@ int tessellation_program(int argc, char** argv) {
     return 0;
 }
 
-void handle_keyboard_input(Camera& c) {
+void handle_keyboard_input(Camera& c, long time_period) {
+    double linear_speed = 0.025;//in units per millisecond
+    double rotational_speed = 0.0005;//in radians per millisecond
+    double linear_distance_travelled = linear_speed * time_period;
+    double rotational_distance_travelled = rotational_speed * time_period;
     auto state = SDL_GetKeyboardState(NULL);
     if (state[SDL_SCANCODE_W])
-        c.rotate_camera_pitch(0.1);
+        c.rotate_camera_pitch(rotational_distance_travelled);
     if (state[SDL_SCANCODE_S])
-        c.rotate_camera_pitch(-0.1);
+        c.rotate_camera_pitch(-rotational_distance_travelled);
     if (state[SDL_SCANCODE_A])
-        c.rotate_camera_roll(0.1);
+        c.rotate_camera_roll(rotational_distance_travelled);
     if (state[SDL_SCANCODE_D])
-        c.rotate_camera_roll(-0.1);
+        c.rotate_camera_roll(-rotational_distance_travelled);
     if (state[SDL_SCANCODE_Q])
-        c.rotate_camera_yaw(-0.1);
+        c.rotate_camera_yaw(-rotational_distance_travelled);
     if (state[SDL_SCANCODE_E])
-        c.rotate_camera_yaw(0.1);
+        c.rotate_camera_yaw(rotational_distance_travelled);
     if (state[SDL_SCANCODE_UP])
-        c.move_camera_relative_to_rotation(Matrix4x1(0, 0, 5, 0));
+        c.move_camera_relative_to_rotation(Matrix4x1(0, 0, linear_distance_travelled, 0));
     if (state[SDL_SCANCODE_DOWN])
-        c.move_camera_relative_to_rotation(Matrix4x1(0, 0, -5, 0));
+        c.move_camera_relative_to_rotation(Matrix4x1(0, 0, -linear_distance_travelled, 0));
     if (state[SDL_SCANCODE_LEFT])
-        c.move_camera_relative_to_rotation(Matrix4x1(-5, 0, 0, 0));
+        c.move_camera_relative_to_rotation(Matrix4x1(-linear_distance_travelled, 0, 0, 0));
     if (state[SDL_SCANCODE_RIGHT])
-        c.move_camera_relative_to_rotation(Matrix4x1(5, 0, 0, 0));
+        c.move_camera_relative_to_rotation(Matrix4x1(linear_distance_travelled, 0, 0, 0));
 }
 
 int main(int argc, char** argv) {
@@ -53,8 +57,8 @@ int main(int argc, char** argv) {
 
         //std::ifstream inputfilestream("cb750.STL");
         //auto tess = StlReader.readTessellation(inputfilestream);
-        CubeTessellationGenerator generator;
-        auto tess = generator.makeFractalCube(100, 2);
+        BallTessellationGenerator generator;
+        auto tess = generator.makeBall(50);
         Camera c = Camera();
         Renderer r = Renderer(window, &c, tess.get());
         auto frameController = FrameController(60);
@@ -69,7 +73,7 @@ int main(int argc, char** argv) {
                     break;
                 }
             } else {
-                handle_keyboard_input(c);
+                handle_keyboard_input(c, frameController.previous_frame_length());
                 r.render();
                 window.push_buffer();
                 frameController.wait_next_frame();
