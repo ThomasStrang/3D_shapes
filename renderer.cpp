@@ -6,28 +6,32 @@
 #include "geometry.h"
 #include "camera.h"
 
-struct RasterisationTriangle {
-	double z;//for now just have 1 z for each triangle
-	int lo_x, lo_y, hi_x, hi_y;
-	Matrix4x1 surface_normal;
-	double dot_camera;
-	double dot_skylight;
-	PointIndex points[3];
-	RasterisationTriangle(double z, int lo_x, int hi_x, int lo_y, int hi_y, Matrix4x1 surface_normal, double dot_camera, double dot_skylight, PointIndex a, PointIndex b, PointIndex c) :
-		z(z), lo_x(lo_x), hi_x(hi_x), lo_y(lo_y), hi_y(hi_y), surface_normal(surface_normal), dot_camera(dot_camera), dot_skylight(dot_skylight) {
-		points[0] = a;
-		points[1] = b;
-		points[2] = c;
-	}
-
-	PointIndex operator[](U32 i) const {
-		return points[i];
-	}
-};
-
 class Renderer {
 
+	struct RasterisationTriangle {
+		bool renderable;
+		double z;//for now just have 1 z for each triangle
+		int lo_x, lo_y, hi_x, hi_y;
+		Matrix4x1 surface_normal;
+		double dot_skylight;
+		PointIndex points[3];
+
+		RasterisationTriangle(double z, int lo_x, int hi_x, int lo_y, int hi_y, Matrix4x1 surface_normal, double dot_skylight, PointIndex a, PointIndex b, PointIndex c) :
+			renderable(true), z(z), lo_x(lo_x), hi_x(hi_x), lo_y(lo_y), hi_y(hi_y), surface_normal(surface_normal), dot_skylight(dot_skylight) {
+			points[0] = a;
+			points[1] = b;
+			points[2] = c;
+		}
+
+		RasterisationTriangle() : renderable(false) {}
+
+		PointIndex operator[](U32 i) const {
+			return points[i];
+		}
+	};
+
 	Window& window;
+	Uint32* pixel_buffer;//technically owned by the window
 	Camera* cam;
 	Tessellation* tess;
 
@@ -38,14 +42,31 @@ class Renderer {
 	RasterisationTriangle* triangles_for_rasterisation;
 	int w, h, num_pixels, num_points, num_triangles;
 	double w_div_2, h_div_2, screen_ratio;
-	Uint32* pixel_buffer;
 	double* z_buffer;
 	bool print_debug_info = true;
 	
 
 public:
 
-	Renderer(Window& w, Camera* c, Tessellation* t) : window(w), cam(c), tess(t), num_points(0), num_triangles(0), w(0), h(0) {}
+	Renderer(Window& w, Camera* c, Tessellation* t) : 
+		window(w), 
+		cam(c), 
+		tess(t), 
+		num_points(0), 
+		num_triangles(0), 
+		w(0), 
+		h(0), 
+		points_camera_space(nullptr),
+		points_screen_space(nullptr),
+		triangles_for_rasterisation(nullptr),
+		z_buffer(nullptr) {}
+
+	~Renderer() {
+		free(points_camera_space);
+		free(points_screen_space);
+		free(triangles_for_rasterisation);
+		free(z_buffer);
+	}
 
 	int render() {
 		if (!window.is_initialised()) return -1;
@@ -57,11 +78,11 @@ public:
 		auto time3 = get_time();
 		map_triangles_to_rasterisation_triangles();
 		auto time4 = get_time();
-		rasterise_triangles_to_pixel_buffer();
+		clear_pixel_buffer();
 		auto time5 = get_time();
-		copy_pixel_buffer_to_window();
+		rasterise_triangles_to_pixel_buffer();
 		auto time6 = get_time();
-		std::cout << "3d transformation: " << time2 - time1 << "\t perspective projection: " << time3 - time2 << "\t triangle computation: " << time4 - time3 << "\t rasterisation: " << time5 - time4 << "\t buffer swap: " << time6 - time5 << "\n";
+		std::cout << "3d transformation: " << time2 - time1 << "\t perspective projection: " << time3 - time2 << "\t triangle computation: " << time4 - time3 << "\t buffer clear: " << time5 - time4 << "\t rasterisation: " << time6 - time5 << "\n";
 		std::cout << "frame time: " << time6 - time1 << "\n";
 	}
 
@@ -92,11 +113,10 @@ private:
 			h_div_2 = h * 0.5;
 			screen_ratio = (double)w / (double)h;
 			num_pixels = w * h;
-			free(pixel_buffer);
 			free(z_buffer);
-			pixel_buffer = (Uint32*)malloc(num_pixels * sizeof(Uint32));
 			z_buffer = (double*)malloc(num_pixels * sizeof(double));
 		}
+		pixel_buffer = window.get_pixels();
 		cam_transform = cam->get_transform();
 	}
 
@@ -115,6 +135,7 @@ private:
 	}
 
 	RasterisationTriangle map_triangle_to_rasterisation_triangle(Triangle t) {
+		if (points_camera_space[t[0]].z <= 0 || points_camera_space[t[1]].z <= 0 || points_camera_space[t[2]].z <= 0) return RasterisationTriangle();
 		auto a2d = points_screen_space[t[0]];
 		auto b2d = points_screen_space[t[1]];
 		auto c2d = points_screen_space[t[2]];
@@ -122,19 +143,18 @@ private:
 		auto b3d = points_camera_space[t[1]];
 		auto c3d = points_camera_space[t[2]];
 		auto z = (a3d.z + b3d.z + c3d.z) / 3; //for now just have 1 z for each triangle
-		auto lo_x = std::max((int)std::min({ a2d.x,b2d.x,c2d.x }),0);
-		auto lo_y = std::max((int)std::min({ a2d.y,b2d.y,c2d.y }),0);
-		auto hi_x = std::min((int)std::max({ a2d.x + 1,b2d.x + 1,c2d.x + 1 }),w-1);
-		auto hi_y = std::min((int)std::max({ a2d.y + 1,b2d.y + 1,c2d.y + 1 }),h-1);
 		auto surface_normal = (b3d - a3d).cross_as_3d(c3d - a3d).normalise();
 		auto dot_camera = surface_normal.dot_product_as_3d(a3d);
+		if (dot_camera < 0) return RasterisationTriangle();
+		auto lo_x = std::max((int)std::min({ a2d.x,b2d.x,c2d.x }), 0);
+		auto lo_y = std::max((int)std::min({ a2d.y,b2d.y,c2d.y }), 0);
+		auto hi_x = std::min((int)std::max({ a2d.x + 1,b2d.x + 1,c2d.x + 1 }), w - 1);
+		auto hi_y = std::min((int)std::max({ a2d.y + 1,b2d.y + 1,c2d.y + 1 }), h - 1);
 		auto dot_skylight = surface_normal.dot_product_as_3d(skylight);
-		return RasterisationTriangle(z,lo_x,hi_x,lo_y,hi_y,surface_normal,dot_camera,dot_skylight,t.ps[0],t.ps[1],t.ps[2]);
+		return RasterisationTriangle(z,lo_x,hi_x,lo_y,hi_y,surface_normal,dot_skylight,t.ps[0],t.ps[1],t.ps[2]);
 	}
 
 	void rasterise_triangle_to_pixel_buffer(RasterisationTriangle t) {
-		if (t.dot_camera < 0)  return; // don't render triangles facing away? maybe remove this later.
-		if (points_camera_space[t[0]].z <= 0 || points_camera_space[t[1]].z <= 0 || points_camera_space[t[2]].z <= 0) return; // don't render triangles behind the screen. TODO change this to render only the renderable bit.
 		Uint32 light_level = (t.dot_skylight + 1.0) * 127.0;
 		Uint32 pixel_colour = (255 << 24) + (light_level << 16) + (light_level << 8) + light_level;
 		auto a = points_screen_space[t[0]];
@@ -146,11 +166,12 @@ private:
 		for (int x = t.lo_x; x < t.hi_x; x++) {
 			for (int y = t.lo_y; y < t.hi_y; y++) {
 				int pixel_num = x + (w * y);
-				if (t.z > z_buffer[pixel_num] && z_buffer[pixel_num] != 0)  continue;
-				Matrix3x1 xy = Matrix3x1(x + 0.5, y + 0.5, 1);//add 0.5 to get the "middle" of the pixel, just for my own visualisation in my head.
-				if ((xy - a).cross_as_2d(ab) <= 0 && (xy - b).cross_as_2d(bc) <= 0 && (xy - c).cross_as_2d(ca) <= 0) {
-					pixel_buffer[pixel_num] = pixel_colour;
-					z_buffer[pixel_num] = t.z;
+				if (t.z < z_buffer[pixel_num]) {
+					Matrix3x1 xy = Matrix3x1(x + 0.5, y + 0.5, 1);//add 0.5 to get the "middle" of the pixel, just for my own visualisation in my head.
+					if ((xy - a).cross_as_2d(ab) <= 0 && (xy - b).cross_as_2d(bc) <= 0 && (xy - c).cross_as_2d(ca) <= 0) {
+						pixel_buffer[pixel_num] = pixel_colour;
+						z_buffer[pixel_num] = t.z;
+					}
 				}
 			}
 		}
@@ -171,19 +192,15 @@ private:
 			triangles_for_rasterisation[i] = map_triangle_to_rasterisation_triangle(tess->allTriangles()[i]);
 	}
 
-	void rasterise_triangles_to_pixel_buffer() {
-		std::fill_n(z_buffer, num_pixels, 0);
-		for (int i = 0; i < num_triangles; i++)
-			rasterise_triangle_to_pixel_buffer(triangles_for_rasterisation[i]);
+	void clear_pixel_buffer() {
+		Uint32 default_colour = (255 << 24) + (60 << 16) + (60 << 8) + 200;
+		std::fill_n(pixel_buffer, num_pixels, default_colour);
 	}
 
-	void copy_pixel_buffer_to_window() {
-		Uint32 default_colour = (255 << 24) + (60 << 16) + (60 << 8) + 200;
-		for (int i = 0; i < num_pixels; i++) {
-			if (z_buffer[i] != 0)
-				window.write_pixel(i, pixel_buffer[i]);
-			else
-				window.write_pixel(i, default_colour);
-		}
+	void rasterise_triangles_to_pixel_buffer() {
+		std::fill_n(z_buffer, num_pixels, (double) 99999.0);
+		for (int i = 0; i < num_triangles; i++)
+			if(triangles_for_rasterisation[i].renderable) 
+				rasterise_triangle_to_pixel_buffer(triangles_for_rasterisation[i]);
 	}
 };

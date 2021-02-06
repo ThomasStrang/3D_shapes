@@ -24,5 +24,6 @@ public:
 	int write_pixel(int i, Uint8 r, Uint8 g, Uint8 b);
 	int write_pixel(int i, Uint32 c);
 	int push_buffer();
+	Uint32* get_pixels();
 	~Window();
 };

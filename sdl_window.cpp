@@ -56,6 +56,10 @@ int Window::write_pixel(int i, Uint32 c) {
 	return 0;
 }
 
+Uint32* Window::get_pixels() {
+	return pixels;
+}
+
 int Window::push_buffer() {
 	if (!initialised) return -1;
 	return SDL_UpdateWindowSurface(window.get());
