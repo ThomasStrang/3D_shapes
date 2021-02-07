@@ -57,8 +57,8 @@ int main(int argc, char** argv) {
 
         //std::ifstream inputfilestream("cb750.STL");
         //auto tess = StlReader.readTessellation(inputfilestream);
-        CubeTessellationGenerator generator;
-        auto tess = generator.makeFractalCube(50,1);
+        BallTessellationGenerator generator;
+        auto tess = generator.makeBall(50);
         Camera c = Camera();
         Renderer r = Renderer(window, &c, tess.get());
         auto frameController = FrameController(60);

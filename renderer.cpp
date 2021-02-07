@@ -4,7 +4,10 @@
 #include "sdl_window.h"
 #include "tessellation.h"
 #include "geometry.h"
+#include <thread>
 #include "camera.h"
+
+#define NUM_THREADS 16
 
 class Renderer {
 
@@ -32,7 +35,7 @@ class Renderer {
 
 	//variables which are owned by this and can change
 	Matrix4x4 cam_transform;
-	Matrix4x1 skylight = Matrix4x1(1, 1, 1, 0).normalise();
+	Matrix4x1 skylight = Matrix4x1(1, 1, 0, 0).normalise();
 	Matrix4x1* points_camera_space;
 	Matrix3x1* points_screen_space;
 	RasterisationTriangle* triangles_for_rasterisation;
@@ -154,6 +157,8 @@ private:
 	Uint32 map_rgb_to_uint(int r, int g, int b) {
 		return (255 << 24) + (r << 16) + (g << 8) + b;
 	}
+	
+	//const Uint32 debug_colours[4] = { map_rgb_to_uint(255,128,0),map_rgb_to_uint(0,255,128),map_rgb_to_uint(128,0,255),map_rgb_to_uint(0,128,255) };
 
 	RasterisationTriangle map_triangle_to_rasterisation_triangle(Triangle t) {
 		if (points_camera_space[t[0]].z <= 0 || points_camera_space[t[1]].z <= 0 || points_camera_space[t[2]].z <= 0) return RasterisationTriangle();
@@ -185,9 +190,15 @@ private:
 		std::fill_n(pixel_buffer, num_pixels, map_rgb_to_uint(60,60,200));
 	}
 
-	void rasterise_triangle_to_pixel_buffer(RasterisationTriangle t) {
+	void rasterise_triangle_to_portion_of_pixel_buffer(RasterisationTriangle t, int offset, int num_threads) {
 		auto pixel_colour = t.pixel_colour;
-		for (int x = t.lo_x; x < t.hi_x; x++) {
+		//temp for seeing different colours of threads
+		//pixel_colour = debug_colours[offset];
+		int t_offset = t.lo_x % num_threads;
+		int offset_diff = offset - t_offset;
+		int lo_x = t.lo_x + offset_diff;
+		if (offset_diff < 0) lo_x += num_threads;
+		for (int x = lo_x; x < t.hi_x; x+=num_threads) {
 			for (int y = t.lo_y; y < t.hi_y; y++) {
 				int pixel_num = x + (w * y);
 				if (t.z < z_buffer[pixel_num]) {
@@ -200,10 +211,20 @@ private:
 		}
 	}
 
+	void rasterise_triangles_to_portion_of_pixel_buffer(int offset, int num_threads) {
+		for (int i = 0; i < num_triangles; i++)
+			if (triangles_for_rasterisation[i].renderable)
+				rasterise_triangle_to_portion_of_pixel_buffer(triangles_for_rasterisation[i], offset, num_threads);
+	}
+	
+
 	void rasterise_triangles_to_pixel_buffer() {
 		std::fill_n(z_buffer, num_pixels, (double) 99999.0);
-		for (int i = 0; i < num_triangles; i++)
-			if(triangles_for_rasterisation[i].renderable) 
-				rasterise_triangle_to_pixel_buffer(triangles_for_rasterisation[i]);
+		std::thread threads[NUM_THREADS];
+		for (int i = 0; i < NUM_THREADS; i++) {
+			threads[i] = std::thread([this,i] {this->rasterise_triangles_to_portion_of_pixel_buffer(i, NUM_THREADS); });
+		}
+		for (int i = 0; i < NUM_THREADS; i++)
+			threads[i].join();
 	}
 };
