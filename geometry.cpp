@@ -62,7 +62,13 @@ Matrix4x1 Matrix4x1::cross_as_3d(Matrix4x1 o) {
 }
 
 Matrix4x1 Matrix4x1::normalise() {
-	return *this * (1/(sqrt(x * x + y * y + z * z + w * w)));
+	return *this * (1 / (sqrt(x * x + y * y + z * z + w * w)));
+}
+
+Matrix4x1 Matrix4x1::normalise_as_3d() {
+	auto m = *this * (1 / (sqrt(x * x + y * y + z * z)));
+	m.w = 1;
+	return m;
 }
 
 double Matrix4x1::dot_product_as_3d(Matrix4x1 o) {
@@ -137,6 +143,14 @@ Matrix3x1 Matrix3x1::operator - (Matrix3x1 v) {
 
 double Matrix3x1::cross_as_2d(Matrix3x1 o) {
 	return x * o.y - y * o.x;
+}
+
+double Matrix3x1::homogenous_dot_product(Matrix3x1 o) {
+	return x * o.x + y * o.y + w * o.w;
+}
+
+Matrix3x1 Matrix3x1::homogenous_cross_product(Matrix3x1 o) {
+	return Matrix3x1(y * o.w - w * o.y, w * o.x - x * o.w, x * o.y - y * o.x);
 }
 
 Matrix4x4 identityMatrix4x4() {

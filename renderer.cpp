@@ -12,21 +12,16 @@ class Renderer {
 		bool renderable;
 		double z;//for now just have 1 z for each triangle
 		int lo_x, lo_y, hi_x, hi_y;
-		Matrix4x1 surface_normal;
-		double dot_skylight;
-		PointIndex points[3];
+		Uint32 pixel_colour;
+		Matrix3x1 ab, bc, ca;
 
-		RasterisationTriangle(double z, int lo_x, int hi_x, int lo_y, int hi_y, Matrix4x1 surface_normal, double dot_skylight, PointIndex a, PointIndex b, PointIndex c) :
-			renderable(true), z(z), lo_x(lo_x), hi_x(hi_x), lo_y(lo_y), hi_y(hi_y), surface_normal(surface_normal), dot_skylight(dot_skylight) {
-			points[0] = a;
-			points[1] = b;
-			points[2] = c;
-		}
+		RasterisationTriangle(double z, int lo_x, int hi_x, int lo_y, int hi_y, double pixel_colour, Matrix3x1 ab, Matrix3x1 bc, Matrix3x1 ca) :
+			renderable(true), z(z), lo_x(lo_x), hi_x(hi_x), lo_y(lo_y), hi_y(hi_y), pixel_colour(pixel_colour), ab(ab) ,bc(bc), ca(ca) {}
 
-		RasterisationTriangle() : renderable(false) {}
+		RasterisationTriangle() : renderable(false) {}//default value for a triangle which we won't bother rendering.
 
-		PointIndex operator[](U32 i) const {
-			return points[i];
+		bool point_within(Matrix3x1 xy) {
+			return xy.homogenous_dot_product(ab) >= 0 && xy.homogenous_dot_product(bc) >= 0 && xy.homogenous_dot_product(ca) >= 0;
 		}
 	};
 
@@ -35,8 +30,9 @@ class Renderer {
 	Camera* cam;
 	Tessellation* tess;
 
+	//variables which are owned by this and can change
 	Matrix4x4 cam_transform;
-	Matrix4x1 skylight = Matrix4x1(1, 1.2, 0, 1).normalise();
+	Matrix4x1 skylight = Matrix4x1(1, 1, 1, 0).normalise();
 	Matrix4x1* points_camera_space;
 	Matrix3x1* points_screen_space;
 	RasterisationTriangle* triangles_for_rasterisation;
@@ -54,12 +50,17 @@ public:
 		tess(t), 
 		num_points(0), 
 		num_triangles(0), 
-		w(0), 
-		h(0), 
+		w(0),
+		h(0),
+		w_div_2(0),
+		h_div_2(0),
+		screen_ratio(0),
+		num_pixels(0),
 		points_camera_space(nullptr),
 		points_screen_space(nullptr),
 		triangles_for_rasterisation(nullptr),
-		z_buffer(nullptr) {}
+		z_buffer(nullptr),
+		pixel_buffer(nullptr) {}
 
 	~Renderer() {
 		free(points_camera_space);
@@ -84,6 +85,7 @@ public:
 		auto time6 = get_time();
 		std::cout << "3d transformation: " << time2 - time1 << "\t perspective projection: " << time3 - time2 << "\t triangle computation: " << time4 - time3 << "\t buffer clear: " << time5 - time4 << "\t rasterisation: " << time6 - time5 << "\n";
 		std::cout << "frame time: " << time6 - time1 << "\n";
+		return 0;
 	}
 
 private:
@@ -126,6 +128,11 @@ private:
 		return v;
 	}
 
+	void map_points_to_camera_space() {
+		for (int i = 0; i < num_points; i++)
+			points_camera_space[i] = map_point_to_camera_space(tess->allPoints()[i]);
+	}
+
 	Matrix3x1 map_camera_space_to_screen_space(Matrix4x1 v) {
 		double inv_z = 1 / v.z;
 		auto s = Matrix3x1(v.x * inv_z, v.y * inv_z, 1);
@@ -134,57 +141,39 @@ private:
 		return s;
 	}
 
+	void map_points_to_screen_space() {
+		for (int i = 0; i < num_points; i++)
+			points_screen_space[i] = map_camera_space_to_screen_space(points_camera_space[i]);
+	}
+
+	Uint32 map_grey_to_uint32(int gr) {
+		return (255 << 24) + (gr << 16) + (gr << 8) + gr;
+
+	}
+
+	Uint32 map_rgb_to_uint(int r, int g, int b) {
+		return (255 << 24) + (r << 16) + (g << 8) + b;
+	}
+
 	RasterisationTriangle map_triangle_to_rasterisation_triangle(Triangle t) {
 		if (points_camera_space[t[0]].z <= 0 || points_camera_space[t[1]].z <= 0 || points_camera_space[t[2]].z <= 0) return RasterisationTriangle();
-		auto a2d = points_screen_space[t[0]];
-		auto b2d = points_screen_space[t[1]];
-		auto c2d = points_screen_space[t[2]];
 		auto a3d = points_camera_space[t[0]];
 		auto b3d = points_camera_space[t[1]];
 		auto c3d = points_camera_space[t[2]];
 		auto z = (a3d.z + b3d.z + c3d.z) / 3; //for now just have 1 z for each triangle
-		auto surface_normal = (b3d - a3d).cross_as_3d(c3d - a3d).normalise();
+		auto surface_normal = (b3d - a3d).cross_as_3d(c3d - a3d).normalise_as_3d();
 		auto dot_camera = surface_normal.dot_product_as_3d(a3d);
 		if (dot_camera < 0) return RasterisationTriangle();
+		auto a2d = points_screen_space[t[0]];
+		auto b2d = points_screen_space[t[1]];
+		auto c2d = points_screen_space[t[2]];
 		auto lo_x = std::max((int)std::min({ a2d.x,b2d.x,c2d.x }), 0);
 		auto lo_y = std::max((int)std::min({ a2d.y,b2d.y,c2d.y }), 0);
 		auto hi_x = std::min((int)std::max({ a2d.x + 1,b2d.x + 1,c2d.x + 1 }), w - 1);
 		auto hi_y = std::min((int)std::max({ a2d.y + 1,b2d.y + 1,c2d.y + 1 }), h - 1);
-		auto dot_skylight = surface_normal.dot_product_as_3d(skylight);
-		return RasterisationTriangle(z,lo_x,hi_x,lo_y,hi_y,surface_normal,dot_skylight,t.ps[0],t.ps[1],t.ps[2]);
-	}
-
-	void rasterise_triangle_to_pixel_buffer(RasterisationTriangle t) {
-		Uint32 light_level = (t.dot_skylight + 1.0) * 127.0;
-		Uint32 pixel_colour = (255 << 24) + (light_level << 16) + (light_level << 8) + light_level;
-		auto a = points_screen_space[t[0]];
-		auto b = points_screen_space[t[1]];
-		auto c = points_screen_space[t[2]];
-		auto ab = b - a;
-		auto bc = c - b;
-		auto ca = a - c;
-		for (int x = t.lo_x; x < t.hi_x; x++) {
-			for (int y = t.lo_y; y < t.hi_y; y++) {
-				int pixel_num = x + (w * y);
-				if (t.z < z_buffer[pixel_num]) {
-					Matrix3x1 xy = Matrix3x1(x + 0.5, y + 0.5, 1);//add 0.5 to get the "middle" of the pixel, just for my own visualisation in my head.
-					if ((xy - a).cross_as_2d(ab) <= 0 && (xy - b).cross_as_2d(bc) <= 0 && (xy - c).cross_as_2d(ca) <= 0) {
-						pixel_buffer[pixel_num] = pixel_colour;
-						z_buffer[pixel_num] = t.z;
-					}
-				}
-			}
-		}
-	}
-
-	void map_points_to_camera_space() {
-		for (int i = 0; i < num_points; i++)
-			points_camera_space[i] = map_point_to_camera_space(tess->allPoints()[i]);
-	}
-
-	void map_points_to_screen_space() {
-		for (int i = 0; i < num_points; i++)
-			points_screen_space[i] = map_camera_space_to_screen_space(points_camera_space[i]);
+		auto dot_skylight = surface_normal.dot_product_as_3d(skylight);//work out why transforming skylight by camera transform doesn't work
+		auto light_level = map_grey_to_uint32((dot_skylight + 1.0) * 127.0);
+		return RasterisationTriangle(z, lo_x, hi_x, lo_y, hi_y, light_level, a2d.homogenous_cross_product(b2d), b2d.homogenous_cross_product(c2d), c2d.homogenous_cross_product(a2d));
 	}
 
 	void map_triangles_to_rasterisation_triangles() {
@@ -193,8 +182,22 @@ private:
 	}
 
 	void clear_pixel_buffer() {
-		Uint32 default_colour = (255 << 24) + (60 << 16) + (60 << 8) + 200;
-		std::fill_n(pixel_buffer, num_pixels, default_colour);
+		std::fill_n(pixel_buffer, num_pixels, map_rgb_to_uint(60,60,200));
+	}
+
+	void rasterise_triangle_to_pixel_buffer(RasterisationTriangle t) {
+		auto pixel_colour = t.pixel_colour;
+		for (int x = t.lo_x; x < t.hi_x; x++) {
+			for (int y = t.lo_y; y < t.hi_y; y++) {
+				int pixel_num = x + (w * y);
+				if (t.z < z_buffer[pixel_num]) {
+					if (t.point_within(Matrix3x1(x + 0.5, y + 0.5, 1))) {
+						pixel_buffer[pixel_num] = pixel_colour;
+						z_buffer[pixel_num] = t.z;
+					}
+				}
+			}
+		}
 	}
 
 	void rasterise_triangles_to_pixel_buffer() {

@@ -39,3 +39,7 @@ Matrix4x4 Camera::get_translation() {
 Matrix4x4 Camera::get_rotation() {
 	return camera_rotation;
 }
+
+Matrix4x4 Camera::get_rotation_inv() {
+	return camera_rotation_inv;
+}

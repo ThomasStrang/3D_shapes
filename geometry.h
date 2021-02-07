@@ -10,6 +10,8 @@ struct Matrix3x1 {
 	Matrix3x1 operator + (Matrix3x1 v);
 	Matrix3x1 operator - (Matrix3x1 v);
 	double cross_as_2d(Matrix3x1);
+	double homogenous_dot_product(Matrix3x1 o);
+	Matrix3x1 homogenous_cross_product(Matrix3x1);
 	void print(std::ostream* os);
 };
 
@@ -24,6 +26,7 @@ struct Matrix4x1 {
 	Matrix4x1 operator / (double d);
 	Matrix4x1 cross_as_3d(Matrix4x1 o);
 	Matrix4x1 normalise();
+	Matrix4x1 normalise_as_3d();
 	double dot_product_as_3d(Matrix4x1 o);
 	void print(std::ostream* os);
 };

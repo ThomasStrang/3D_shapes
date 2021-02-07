@@ -15,4 +15,5 @@ public:
 	Matrix4x4 get_transform();
 	Matrix4x4 get_translation();
 	Matrix4x4 get_rotation();
+	Matrix4x4 get_rotation_inv();
 };
