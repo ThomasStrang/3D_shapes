@@ -14,7 +14,7 @@
 
 int tessellation_program(int argc, char** argv) {
     CubeTessellationGenerator generator;
-    auto tess = generator.makeFractalCube(100, 1);
+    auto tess = generator.makeFractalCube(100, 3);
     std::ofstream outputfilestream("output_file.STL");
     StlWriter::writeTessellation(tess.get(), outputfilestream);
     outputfilestream.close();
@@ -55,16 +55,17 @@ int main(int argc, char** argv) {
     Window window;
     if (window.init() == 0) {
 
-        //std::ifstream inputfilestream("cb750.STL");
-        //auto tess = StlReader.readTessellation(inputfilestream);
-        BallTessellationGenerator generator;
-        auto tess = generator.makeBall(50);
+        //std::ifstream inputfilestream("eiffel_tower_sample.STL");
+        //auto tess = StlReader::readTessellation(inputfilestream);
+        //BallTessellationGenerator generator;
+        //auto tess = generator.makeBall(50);
+        CubeTessellationGenerator generator;
+        auto tess = generator.makeFractalCube(100, 3);
         Camera c = Camera();
         Renderer r = Renderer(window, &c, tess.get());
         auto frameController = FrameController(60);
         bool quit = false;
         SDL_Event e;
-
         while (!quit) {
             if (SDL_PollEvent(&e) > 0) {
                 switch (e.type) {
