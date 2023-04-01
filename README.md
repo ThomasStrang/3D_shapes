@@ -13,8 +13,8 @@ A 3d rasterisation renderer with isometric projection. Contains the following co
    * msbuild 3D_shapes.sln
  
  ## Possible Future Directions
-    * Multi threaded CPU based rendering
-    * Interface with OpenGL for GPU based rendering
-    * Phong lighting model
-    * Textures
-    * Anti aliasing
+   * Multi threaded CPU based rendering
+   * Interface with OpenGL for GPU based rendering
+   * Phong lighting model
+   * Textures
+   * Anti aliasing
