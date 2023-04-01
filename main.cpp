@@ -14,7 +14,7 @@
 
 int tessellation_program(int argc, char** argv) {
     CubeTessellationGenerator generator;
-    auto tess = generator.makeFractalCube(100, 3);
+    auto tess = generator.makeFractalCube(25, 0);
     std::ofstream outputfilestream("output_file.STL");
     StlWriter::writeTessellation(tess.get(), outputfilestream);
     outputfilestream.close();
@@ -50,17 +50,17 @@ void handle_keyboard_input(Camera& c, long time_period) {
 }
 
 int main(int argc, char** argv) {
-    tessellation_program(argc, argv);
+    //tessellation_program(argc, argv);
     //return 0;
+    std::ifstream inputfilestream("stls/rx8-complete-ascii.STL");
+    auto tess = StlReader::readTessellation(inputfilestream);
     Window window;
     if (window.init() == 0) {
 
-        //std::ifstream inputfilestream("eiffel_tower_sample.STL");
-        //auto tess = StlReader::readTessellation(inputfilestream);
         //BallTessellationGenerator generator;
         //auto tess = generator.makeBall(50);
-        CubeTessellationGenerator generator;
-        auto tess = generator.makeFractalCube(100, 3);
+        //CubeTessellationGenerator generator;
+        //auto tess = generator.makeFractalCube(100, 3);
         Camera c = Camera();
         Renderer r = Renderer(window, &c, tess.get());
         auto frameController = FrameController(60);

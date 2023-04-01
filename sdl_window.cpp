@@ -9,7 +9,7 @@ int Window::init() {
 	if (initialised) return -1;
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) return -1;
 
-	window = std::unique_ptr<SDL_Window, std::function<void(SDL_Window*)>>(SDL_CreateWindow("a hello world window", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, 0), SDL_DestroyWindow);
+	window = std::unique_ptr<SDL_Window, std::function<void(SDL_Window*)>>(SDL_CreateWindow("3D_shapes", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, 0), SDL_DestroyWindow);
 	if (!window.get()) return -1;
 
 	surface = std::unique_ptr<SDL_Surface, std::function<void(SDL_Surface*)>>(SDL_GetWindowSurface(window.get()), SDL_FreeSurface);
